@@ -69,7 +69,30 @@ def chooseBestSplit(dataSet):
                     gain = oE - E
     return splitLabel,splitValue
 
+def getGainThreshold():
+    return 1
 
+def getDeepThreshold():
+    return 5
+
+
+def getDeep(tree):
+    if not isinstance(tree, dict):
+        return 0
+    tree = copy.deepcopy(tree)
+    maxDeep = 0
+    for key in tree.keys():
+        thisDeep = 1 +  getDeep(tree[key])
+        if thisDeep > maxDeep : maxDeep = thisDeep
+    return maxDeep
+
+
+def writeData(dataSet, tree):
+    fr = open("result.csv", 'w')
+    for data in dataSet:
+        fr.write(str(data) + "\n")
+    fr.write(str(tree))
+    fr.close()
 
 def getMapTable():
     table = {0:"x", 1:"y"}
@@ -96,23 +119,32 @@ def majorityCnt(classList):
     return sortedClassCount[0][0]
 
 def createTree(dataSet):
+    maxDeep = 0
     classList = [example[-1] for example in dataSet]
     if classList.count(classList[0]) == len(classList):
-        return classList[0]
+        return classList[0], 0
     #处理当限制深度和没有特征可分的时候,还没有完成分类,采用分类的方法实现(回归树不会用到这里)
     if len(dataSet[0]) == 1:
-        return majorityCnt(classList)
+        return majorityCnt(classList), 0
     reverseTable = getMapTableReverse()
     bestLabel, bestValue = chooseBestSplit(dataSet)
     if bestLabel == None:
-        return majorityCnt(classList)
-    #print bestLabel
+        return majorityCnt(classList), 0
+    #print额 bestLabel
     #print dataSet
     left, right = binSplitDataSet(dataSet, reverseTable[bestLabel], bestValue)
     myTree = {bestLabel:{}}
-    myTree[bestLabel]["left<=" + str(bestValue)] = createTree(left)
-    myTree[bestLabel]["right>" + str(bestValue)] = createTree(right)
-    return myTree
+    thisDeep = 2
+    myTree[bestLabel]["left<=" + str(bestValue)], deep = createTree(left)
+    thisDeep += deep
+    if maxDeep < thisDeep: maxDeep = thisDeep
+
+    thisDeep = 2
+    myTree[bestLabel]["right>" + str(bestValue)], deep = createTree(right)
+    thisDeep += deep
+    if maxDeep < thisDeep: maxDeep = thisDeep
+    print myTree, maxDeep
+    return myTree, maxDeep
 
 
 def predict(X, tre):
@@ -154,7 +186,9 @@ def costError(dataSet, tre):
 
 if  __name__ == "__main__":
     dataSet = loadData.produceData()
-    myTree = createTree(dataSet)
+    myTree, deep = createTree(dataSet)
+    print deep
     costError(dataSet, myTree)
     plotMap.plotMap(dataSet)
-    print myTree
+    writeData(dataSet, myTree)
+    print getDeep(myTree)
