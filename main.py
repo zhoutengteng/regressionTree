@@ -48,8 +48,18 @@ def chooseBestSplit(dataSet):
     classLabel = getClassLabel(dataSet)
     numFeatures = len(dataSet[0]) - 1
     for i in range(numFeatures):
-        featList = [value[i] for value in  dataSet]
-        featList = list(set(featList))
+        # featList = [value[i] for value in dataSet]
+        featListPair = [(value[i], value[-1]) for value in dataSet]
+        sorted(featListPair)
+        sign = None
+        featList = []
+        for pair in featListPair:
+            if sign == None:
+                sign = pair[1]
+                featList.append(pair[0])
+            elif sign != pair[1]:
+                sign = pair[1]
+                featList.append(pair[0])
         for featureValue in featList:
                 left, right = binSplitDataSet(dataSet, i, featureValue)
                 E = countEntropyByclassify(left) + countEntropyByclassify(right)
@@ -94,6 +104,8 @@ def createTree(dataSet):
         return majorityCnt(classList)
     reverseTable = getMapTableReverse()
     bestLabel, bestValue = chooseBestSplit(dataSet)
+    if bestLabel == None:
+        return majorityCnt(classList)
     #print bestLabel
     #print dataSet
     left, right = binSplitDataSet(dataSet, reverseTable[bestLabel], bestValue)
