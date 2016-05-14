@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import plotMap
-import math
 import operator
+import adbBoost
 
 #根据特征值分割成数据两部分
 def binSplitDataSet(dataSet, feature, value):
@@ -38,6 +38,31 @@ def countEntropyByclassify(dataSet):
         E += -1 * p * np.log2(p)
     # print E
     return E
+
+def chooseBestSplitByStep(dataSet):
+    oE = countEntropyByclassify(dataSet)
+    gain = 0
+    splitLabel = None
+    splitValue = None
+    table = getMapTable()
+    classLabel = getClassLabel(dataSet)
+    numFeatures = len(dataSet[0]) - 1
+    for i in range(numFeatures):
+        rangeMin = dataSet[:, i].min()
+        rangeMax = dataSet[:, i].max()
+        stepNum = 40
+        stepSize = (rangeMax - rangeMin) / float(stepNum)
+        print rangeMin,rangeMax
+        for j in range(-1, int(stepSize) + 1):
+                featureValue = rangeMin + (j) * stepSize
+                left, right = binSplitDataSet(dataSet, i, featureValue)
+                E = countEntropyByclassify(left) + countEntropyByclassify(right)
+               # print E, oE
+                if oE - E > gain:
+                    splitValue = featureValue
+                    splitLabel = table[i]
+                    gain = oE - E
+    return splitLabel,splitValue
 
 def chooseBestSplit(dataSet):
     oE = countEntropyByclassify(dataSet)
@@ -161,7 +186,7 @@ def createTreeByDeep(dataSet, theDeep, maxDeep):
     if len(dataSet[0]) == 1 or theDeep == maxDeep:
         return majorityCnt(classList)
     reverseTable = getMapTableReverse()
-    bestLabel, bestValue = chooseBestSplit(dataSet)
+    bestLabel, bestValue = chooseBestSplitByStep(dataSet)
     if bestLabel == None:
         return majorityCnt(classList)
     #print额 bestLabel
@@ -211,11 +236,15 @@ def costError(dataSet, tre):
     #     print tre
     print "分类错误率=>",error /  len(dataSet) * 100,"%"
 
-if  __name__ == "__main__":
+def regressionTree():
     dataSet = loadData.produceData()
     myTree = createTreeByDeep(dataSet, 0, 12)
     print myTree
     costError(loadData.produceDataTest(), myTree)
     plotMap.plotMap(dataSet)
     writeData(dataSet, myTree)
-    print getDeep(myTree)
+    # print getDeep(myTree)
+
+if  __name__ == "__main__":
+    regressionTree()
+    # adbBoost.adbBoost()
