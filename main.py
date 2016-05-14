@@ -59,7 +59,7 @@ def chooseBestSplit(dataSet):
                 featList.append(pair[0])
             elif sign != pair[1]:
                 sign = pair[1]
-                featList.append(pair[0])
+                featList.append(pair[0]-1)
         for featureValue in featList:
                 left, right = binSplitDataSet(dataSet, i, featureValue)
                 E = countEntropyByclassify(left) + countEntropyByclassify(right)
@@ -118,7 +118,7 @@ def majorityCnt(classList):
     sortedClassCount = sorted(classCount.iteritems(), key=operator.itemgetter(1), reverse=True)
     return sortedClassCount[0][0]
 
-def createTree(dataSet):
+def createTree(dataSet, theDeep):
     maxDeep = 0
     classList = [example[-1] for example in dataSet]
     if classList.count(classList[0]) == len(classList):
@@ -143,8 +143,28 @@ def createTree(dataSet):
     myTree[bestLabel]["right>" + str(bestValue)], deep = createTree(right)
     thisDeep += deep
     if maxDeep < thisDeep: maxDeep = thisDeep
-    print myTree, maxDeep
+    # print myTree, maxDeep
     return myTree, maxDeep
+
+def createTreeByDeep(dataSet, theDeep, maxDeep):
+    classList = [example[-1] for example in dataSet]
+    if classList.count(classList[0]) == len(classList):
+        return classList[0]
+    #处理当限制深度和没有特征可分的时候,还没有完成分类,采用分类的方法实现(回归树不会用到这里)
+    if len(dataSet[0]) == 1 or theDeep == maxDeep:
+        return majorityCnt(classList)
+    reverseTable = getMapTableReverse()
+    bestLabel, bestValue = chooseBestSplit(dataSet)
+    if bestLabel == None:
+        return majorityCnt(classList)
+    #print额 bestLabel
+    #print dataSet
+    left, right = binSplitDataSet(dataSet, reverseTable[bestLabel], bestValue)
+    myTree = {bestLabel:{}}
+    theDeep += 2
+    myTree[bestLabel]["left<=" + str(bestValue)]  = createTreeByDeep(left, theDeep, maxDeep)
+    myTree[bestLabel]["right>" + str(bestValue)]  = createTreeByDeep(right, theDeep, maxDeep)
+    return myTree
 
 
 def predict(X, tre):
@@ -186,9 +206,9 @@ def costError(dataSet, tre):
 
 if  __name__ == "__main__":
     dataSet = loadData.produceData()
-    myTree, deep = createTree(dataSet)
-    print deep
-    costError(dataSet, myTree)
+    myTree = createTreeByDeep(dataSet, 0, 12)
+    print myTree
+    costError(loadData.produceDataTest(), myTree)
     plotMap.plotMap(dataSet)
     writeData(dataSet, myTree)
     print getDeep(myTree)
