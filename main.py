@@ -11,8 +11,8 @@ import operator
 #根据特征值分割成数据两部分
 def binSplitDataSet(dataSet, feature, value):
     #print feature
-    mat0 = dataSet[np.nonzero(dataSet[:, feature] <= value)]
-    mat1 = dataSet[np.nonzero(dataSet[:, feature] > value)]
+    mat0 = dataSet[np.nonzero(dataSet[:, feature].astype("float") <= value)]
+    mat1 = dataSet[np.nonzero(dataSet[:, feature].astype("float") > value)]
     #plotMap.plotPart2(mat0, mat1)
     # print np.shape(mat0),"--", np.shape(mat1)
     return mat0, mat1
@@ -50,19 +50,26 @@ def chooseBestSplit(dataSet):
     for i in range(numFeatures):
         # featList = [value[i] for value in dataSet]
         featListPair = [(value[i], value[-1]) for value in dataSet]
-        sorted(featListPair)
+        featListPair = sorted(featListPair)
         sign = None
         featList = []
+        lastValue = None
         for pair in featListPair:
             if sign == None:
                 sign = pair[1]
+                lastValue = pair[0]
                 featList.append(pair[0])
             elif sign != pair[1]:
                 sign = pair[1]
-                featList.append(pair[0]-1)
+                #print pair[0], lastValue
+                featList.append((pair[0] + lastValue) / 2.0)
+                lastValue = pair[0]
+            else:
+                lastValue = pair[0]
         for featureValue in featList:
                 left, right = binSplitDataSet(dataSet, i, featureValue)
                 E = countEntropyByclassify(left) + countEntropyByclassify(right)
+               # print E, oE
                 if oE - E > gain:
                     splitValue = featureValue
                     splitLabel = table[i]
@@ -199,7 +206,7 @@ def costError(dataSet, tre):
         yTest = predict(list, copy.deepcopy(tree))
         if abs(label[0][0] - yTest) > 0.000001:
             error += 1
-            print list.T, label[0][0], yTest
+            #print list.T, label[0][0], yTest
     # if error != 0:
     #     print tre
     print "分类错误率=>",error /  len(dataSet) * 100,"%"
